@@ -1,7 +1,8 @@
 #![warn(clippy::all, clippy::nursery, clippy::pedantic)]
 
-use reqwest::{Client, Response, Url};
+use reqwest::{Client, IntoUrl, Response, Url};
 use serde::Serialize;
+use url::ParseError;
 use crate::content_string::ContentString;
 use crate::error::Error;
 
@@ -26,10 +27,13 @@ pub struct GeneratePayload {
 
 impl MarkovChainClient {
     /// Initialize a new client for the markov chain API
+    /// 
+    /// # Panics
+    /// Will panic if failed to convert the `addr`
     #[must_use]
-    pub fn new(addr: Url) -> Self {
+    pub fn new<U: IntoUrl>(addr: U) -> Self {
         Self {
-            addr,
+            addr: addr.into_url().expect("Failed to convert addr"),
             client: Client::new(),
         }
     }
@@ -39,8 +43,11 @@ impl MarkovChainClient {
     /// # Errors
     /// Will return `Err` if an error occurred while serializing the payload or sending a request
     /// to the server.
+    ///
+    /// # Panics
+    /// Will panic if the function cannot parse an endpoint URL
     pub async fn input(&self, payload: InputPayload) -> Result<(), Error> {
-        let endpoint = format!("{}/input", self.addr);
+        let endpoint = self.get_url("generate").expect("Failed to get url");
         let payload = Self::serialize(&payload)?;
 
         self.post(endpoint, payload).await?;
@@ -52,8 +59,11 @@ impl MarkovChainClient {
     /// # Errors
     /// Will return `Err` if an error occurred while serializing the payload, sending a request
     /// to the server or reading the response body.
+    ///
+    /// # Panics
+    /// Will panic if the function cannot parse an endpoint URL
     pub async fn generate(&self, payload: GeneratePayload) -> Result<String, Error> {
-        let endpoint = format!("{}/generate", self.addr);
+        let endpoint = self.get_url("generate").expect("Failed to get url");
         let payload = Self::serialize(&payload)?;
 
         let response = self.post(endpoint, payload).await?;
@@ -62,7 +72,7 @@ impl MarkovChainClient {
         Ok(text)
     }
 
-    async fn post(&self, endpoint: String, payload: String) -> Result<Response, Error> {
+    async fn post<U: IntoUrl>(&self, endpoint: U, payload: String) -> Result<Response, Error> {
         let response = self.client
             .post(endpoint)
             .body(payload)
@@ -83,6 +93,10 @@ impl MarkovChainClient {
 
     fn serialize<T: ?Sized + Serialize>(value: &T) -> Result<String, Error> {
         serde_json::to_string(&value).map_err(Error::Json)
+    }
+
+    fn get_url(&self, endpoint: &str) -> Result<Url, ParseError> {
+        self.addr.join(endpoint)
     }
 }
 
