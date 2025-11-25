@@ -15,13 +15,13 @@ pub struct MarkovChainClient {
 
 #[derive(Debug, Serialize)]
 pub struct InputPayload {
-    input: ContentString
+    pub input: ContentString
 }
 
 #[derive(Debug, Serialize)]
 pub struct GeneratePayload {
-    start: Option<ContentString>,
-    max_length: Option<usize>
+    pub start: Option<ContentString>,
+    pub max_length: Option<usize>
 }
 
 impl MarkovChainClient {

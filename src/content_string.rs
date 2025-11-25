@@ -32,12 +32,12 @@ impl ContentString {
         }
     }
 
-    #[must_use] 
+    #[must_use]
     pub fn as_str(&self) -> &str {
         &self.0
     }
 
-    #[must_use] 
+    #[must_use]
     pub fn into_inner(self) -> String {
         self.0
     }
