@@ -1,3 +1,5 @@
+#![warn(clippy::all, clippy::nursery, clippy::pedantic)]
+
 use reqwest::{Client, Response, Url};
 use serde::Serialize;
 use crate::content_string::ContentString;
@@ -24,6 +26,7 @@ pub struct GeneratePayload {
 
 impl MarkovChainClient {
     /// Initialize a new client for the markov chain API
+    #[must_use]
     pub fn new(addr: Url) -> Self {
         Self {
             addr,
@@ -32,6 +35,10 @@ impl MarkovChainClient {
     }
 
     /// Save the text in the database
+    ///
+    /// # Errors
+    /// Will return `Err` if an error occurred while serializing the payload or sending a request
+    /// to the server.
     pub async fn input(&self, payload: InputPayload) -> Result<(), Error> {
         let endpoint = format!("{}/input", self.addr);
         let payload = Self::serialize(&payload)?;
@@ -41,6 +48,10 @@ impl MarkovChainClient {
     }
 
     /// Generate new text
+    ///
+    /// # Errors
+    /// Will return `Err` if an error occurred while serializing the payload, sending a request
+    /// to the server or reading the response body.
     pub async fn generate(&self, payload: GeneratePayload) -> Result<String, Error> {
         let endpoint = format!("{}/generate", self.addr);
         let payload = Self::serialize(&payload)?;
@@ -71,7 +82,7 @@ impl MarkovChainClient {
     }
 
     fn serialize<T: ?Sized + Serialize>(value: &T) -> Result<String, Error> {
-        serde_json::to_string(&value).map_err(|e| Error::Json(e))
+        serde_json::to_string(&value).map_err(Error::Json)
     }
 }
 
@@ -86,7 +97,7 @@ mod tests {
             "input": "qweasd123"
         });
 
-        let payload = InputPayload { input: "qweasd123".into() };
+        let payload = InputPayload { input: "qweasd123".try_into().unwrap() };
 
         let from_payload = serde_json::to_string(&payload).unwrap();
         let from_payload: Value = serde_json::from_str(&from_payload).unwrap();
@@ -96,6 +107,13 @@ mod tests {
 
     #[test]
     fn generate_payload() {
+        let assert = |json: &Value, payload: &GeneratePayload| {
+            let from_payload = serde_json::to_string(payload).unwrap();
+            let from_payload: Value = serde_json::from_str(&from_payload).unwrap();
+
+            assert_eq!(*json, from_payload);
+        };
+
         let mut json = json!({
             "start": null,
             "max_length": null
@@ -109,18 +127,11 @@ mod tests {
         assert(&json, &payload);
 
         json["start"] = "qweasd123".into();
-        payload.start = Some("qweasd123".into());
+        payload.start = Some("qweasd123".try_into().unwrap());
         assert(&json, &payload);
 
         json["max_length"] = 42.into();
         payload.max_length = Some(42);
         assert(&json, &payload);
-
-        fn assert(json: &Value, payload: &GeneratePayload) {
-            let from_payload = serde_json::to_string(payload).unwrap();
-            let from_payload: Value = serde_json::from_str(&from_payload).unwrap();
-
-            assert_eq!(*json, from_payload);
-        }
     }
 }

@@ -5,7 +5,7 @@ use thiserror::Error;
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ContentString(String);
 
-#[derive(Debug, PartialEq, Error)]
+#[derive(Debug, PartialEq, Eq, Error)]
 pub enum ContentStringError {
     #[error("Text is empty")]
     Empty,
@@ -17,6 +17,9 @@ impl ContentString {
     const MAX_LEN: usize = 2000;
 
     /// Try to construct a `ContentString` from a `String`, validating its length.
+    ///
+    /// # Errors
+    /// Will return `Err` if the string is empty or too long
     pub fn new(s: String) -> Result<Self, ContentStringError> {
         let len = s.len();
 
@@ -25,28 +28,34 @@ impl ContentString {
         } else if len > Self::MAX_LEN {
             Err(ContentStringError::TooLong { length: len, max: Self::MAX_LEN })
         } else {
-            Ok(ContentString(s))
+            Ok(Self(s))
         }
     }
 
+    #[must_use] 
     pub fn as_str(&self) -> &str {
         &self.0
     }
 
+    #[must_use] 
     pub fn into_inner(self) -> String {
         self.0
     }
 }
 
-impl From<String> for ContentString {
-    fn from(value: String) -> Self {
-        ContentString::new(value).unwrap()
+impl TryFrom<String> for ContentString {
+    type Error = ContentStringError;
+
+    fn try_from(value: String) -> Result<Self, Self::Error> {
+        Self::new(value)
     }
 }
 
-impl From<&str> for ContentString {
-    fn from(value: &str) -> Self {
-        ContentString::new(value.to_string()).unwrap()
+impl TryFrom<&str> for ContentString {
+    type Error = ContentStringError;
+
+    fn try_from(value: &str) -> Result<Self, Self::Error> {
+        Self::new(value.to_string())
     }
 }
 
