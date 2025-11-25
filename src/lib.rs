@@ -27,7 +27,7 @@ pub struct GeneratePayload {
 
 impl MarkovChainClient {
     /// Initialize a new client for the markov chain API
-    /// 
+    ///
     /// # Panics
     /// Will panic if failed to convert the `addr`
     #[must_use]
@@ -76,6 +76,7 @@ impl MarkovChainClient {
         let response = self.client
             .post(endpoint)
             .body(payload)
+            .header("Content-Type", "application/json")
             .send()
             .await?;
 
