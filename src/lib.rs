@@ -47,7 +47,7 @@ impl MarkovChainClient {
     /// # Panics
     /// Will panic if the function cannot parse an endpoint URL
     pub async fn input(&self, payload: InputPayload) -> Result<(), Error> {
-        let endpoint = self.get_url("generate").expect("Failed to get url");
+        let endpoint = self.get_url("input").expect("Failed to get url");
         let payload = Self::serialize(&payload)?;
 
         self.post(endpoint, payload).await?;
