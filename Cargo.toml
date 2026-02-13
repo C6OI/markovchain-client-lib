@@ -5,7 +5,7 @@ edition = "2024"
 
 [dependencies]
 thiserror = "2.0.17"
-reqwest = "0.12.24"
+reqwest = "0.13.2"
 serde_json = "1.0.145"
 serde = { version = "1.0.228", features = ["derive"] }
 url = "2.5.7"
