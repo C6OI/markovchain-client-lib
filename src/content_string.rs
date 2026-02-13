@@ -14,14 +14,14 @@ pub enum ContentStringError {
 }
 
 impl ContentString {
-    const MAX_LEN: usize = 2000;
+    pub const MAX_LEN: usize = 2000;
 
     /// Try to construct a `ContentString` from a `String`, validating its length.
     ///
     /// # Errors
     /// Will return `Err` if the string is empty or too long
     pub fn new(s: String) -> Result<Self, ContentStringError> {
-        let len = s.len();
+        let len = s.chars().count();
 
         if len == 0 {
             Err(ContentStringError::Empty)
